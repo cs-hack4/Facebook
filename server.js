@@ -130,7 +130,7 @@ async function getFbData() {
                 mResult['type'] = type
 
                 try {
-                    await axios.delete(BASE_URL+'facebook/name/'+ name +'/'+key+'.json')
+                    await axios.delete(BASE_URL+'facebook/name/'+ type +'/'+key+'.json')
                 } catch (error) {}
             }
         }
