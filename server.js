@@ -119,14 +119,15 @@ async function getFbData() {
             mResult['domain'] = data['domain']
             mResult['female'] = data['female']
 
-            let name = data['name']
+            let type = data['name']
 
-            response = await axios.get(BASE_URL+'facebook/name/'+ name +'.json?orderBy=%22$key%22&limitToLast=1')
+            response = await axios.get(BASE_URL+'facebook/name/'+ type +'.json?orderBy=%22$key%22&limitToLast=1')
             data = response.data
 
             if (data) {
                 let key = Object.keys(data)[0]
                 mResult['name'] = data[key]
+                mResult['type'] = type
 
                 try {
                     await axios.delete(BASE_URL+'facebook/name/'+ name +'/'+key+'.json')
