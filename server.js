@@ -1,4 +1,5 @@
 const express = require('express')
+const dns = require('node:dns')
 const axios = require('axios')
 
 let mFbData = null
@@ -47,6 +48,18 @@ app.get('/ovpn', async (req, res) => {
         res.end(JSON.stringify(mResult))
     } else {
         res.end('{}')
+    }
+})
+
+app.get('/block', async (req, res) => {
+    let query = req.query
+
+    if (query && query.block && query.type) {
+        await readAllData()
+        await blockOVPN(query.block, query.type)
+        res.end('Success')
+    } else {
+        res.end('Error')
     }
 })
 
@@ -140,7 +153,6 @@ async function getFbData() {
 }
 
 async function getOVPN(block) {
-    
     try {
         if (block) {
             let prev = mAllData[block]['block']
@@ -199,11 +211,16 @@ async function getOVPN(block) {
                             }
                         }
                     } else {
+                        let ip = await getIpAdress(key.replace(/[_]/g, '.'))
+                        if (ip == null) {
+                            ip = value['ip']
+                        }
+
                         mResult = {
                             key: key,
                             code: value['code'],
                             country: value['country'],
-                            config: mVIP['config'],
+                            config: mVIP['config'].replace('remote default', 'remote '+ip+' 443'),
                             user: mVIP['user'],
                             pass: mVIP['pass']
                         }
@@ -252,4 +269,31 @@ async function getOVPN(block) {
     } catch (error) {}
 
     return mResult
+}
+
+async function blockOVPN(block, type) {
+    try {
+        let prev = mAllData[block]['block']
+        mAllData[block]['block'] = prev+1
+
+        await axios.patch(BASE_URL+'ovpn/ip/'+block+'.json', JSON.stringify({ block:prev+1, type: type }), {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+    } catch (error) {}
+}
+
+function getIpAdress(host) {
+    return new Promise(function(resolve) {
+        dns.lookup(host, (err, addresses, family) => { 
+            if (err) {
+                resolve(null)
+            } else if (addresses) {
+                resolve(addresses)
+            } else {
+                resolve(null)
+            }
+        })
+    })
 }
