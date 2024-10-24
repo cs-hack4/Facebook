@@ -34,15 +34,25 @@ app.get('/data', async (req, res) => {
 })
 
 app.get('/ovpn', async (req, res) => {
-    let query = req.query
-    let block = null
+    let type = null
+    let key = null
 
-    if (query && query.block) {
-        block = query.block
-    }
+    try {
+        let query = req.query
+        if (query && query.type) {
+            type = query.type
+        }
+    } catch (error) {}
+
+    try {
+        let query = req.query
+        if (query && query.key) {
+            key = query.key
+        }
+    } catch (error) {}
 
     await readAllData()
-    let mResult = await getOVPN(block)
+    let mResult = await getOVPN(type, key)
 
     if(mResult) {
         res.end(JSON.stringify(mResult))
@@ -52,12 +62,27 @@ app.get('/ovpn', async (req, res) => {
 })
 
 app.get('/block', async (req, res) => {
-    let query = req.query
+    let type = null
+    let key = null
 
-    if (query && query.block && query.type) {
+    try {
+        let query = req.query
+        if (query && query.type) {
+            type = query.type
+        }
+    } catch (error) {}
+
+    try {
+        let query = req.query
+        if (query && query.key) {
+            key = query.key
+        }
+    } catch (error) {}
+
+    if (key != null && type != null) {
         await readAllData()
-        await blockOVPN(query.block, query.type)
-        res.end('Success')
+        await blockOVPN(type, key)
+        res.end('Success') 
     } else {
         res.end('Error')
     }
@@ -152,13 +177,13 @@ async function getFbData() {
     return mResult
 }
 
-async function getOVPN(block) {
+async function getOVPN(type, key) {
     try {
-        if (block) {
-            let prev = mAllData[block]['block']
-            mAllData[block]['block'] = prev+1
+        if (key) {
+            let prev = mAllData[key][type]
+            mAllData[key][type] = prev+1
 
-            await axios.patch(BASE_URL+'ovpn/ip/'+block+'.json', JSON.stringify({ block:prev+1 }), {
+            await axios.patch(BASE_URL+'ovpn/ip/'+key+'.json', '{"'+type+'":'+(prev+1)+'}', {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
@@ -178,9 +203,22 @@ async function getOVPN(block) {
         for (let [key, value] of Object.entries(mAllData)) {
             if (value['active'] < parseInt(new Date().getTime()/1000)) {
                 if (value['code'] == code) {
+                    let block = value['block']
+                    try {
+                        if (value['offline'] == undefined || value['offline'] == null) {
+                            block += parseInt(value['offline'])
+                        }
+                    } catch (error) {}
+
+                    try {
+                        if (value['error'] == undefined || value['error'] == null) {
+                            block += parseInt(value['error'])
+                        }
+                    } catch (error) {}
+
                     mData.push({
                         key: key,
-                        block: value['block']
+                        block: block
                     })
                 }
             }
@@ -271,12 +309,12 @@ async function getOVPN(block) {
     return mResult
 }
 
-async function blockOVPN(block, type) {
+async function blockOVPN(type, key) {
     try {
-        let prev = mAllData[block]['block']
-        mAllData[block]['block'] = prev+1
+        let prev = mAllData[key][type]
+        mAllData[key][type] = prev+1
 
-        await axios.patch(BASE_URL+'ovpn/ip/'+block+'.json', JSON.stringify({ block:prev+1, type: type }), {
+        await axios.patch(BASE_URL+'ovpn/ip/'+key+'.json', '{"'+type+'":'+(prev+1)+'}', {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
