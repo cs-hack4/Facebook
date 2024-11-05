@@ -205,13 +205,13 @@ async function getOVPN(type, key) {
                 if (value['code'] == code) {
                     let block = value['block']
                     try {
-                        if (value['offline'] == undefined || value['offline'] == null) {
+                        if (value['offline'] != undefined && value['offline'] != null) {
                             block += parseInt(value['offline'])
                         }
                     } catch (error) {}
 
                     try {
-                        if (value['error'] == undefined || value['error'] == null) {
+                        if (value['error'] != undefined && value['error'] != null) {
                             block += parseInt(value['error'])
                         }
                     } catch (error) {}
