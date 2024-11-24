@@ -156,6 +156,7 @@ async function getFbData() {
         if (data) {
             mResult['domain'] = data['domain']
             mResult['female'] = data['female']
+            mResult['domain_type'] = data['type']
 
             let type = data['name']
 
